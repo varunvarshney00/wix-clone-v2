@@ -1,10 +1,18 @@
 import { z } from "zod";
+import { resolve } from "node:path";
+
+try {
+  process.loadEnvFile(resolve(import.meta.dirname, "../../../.env"));
+} catch {
+    
+}
 
 const configSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   PORT: z.coerce.number().int().min(1).max(65535).default(3000),
   HOST: z.string().min(1).default("127.0.0.1"),
   LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace"]).default("info"),
+  DATABASE_URL: z.string().min(1),
 });
 
 const parsed = configSchema.safeParse(process.env);
@@ -20,5 +28,6 @@ export const config = {
   port: parsed.data.PORT,
   host: parsed.data.HOST,
   logLevel: parsed.data.LOG_LEVEL,
+  databaseUrl: parsed.data.DATABASE_URL,
   isProduction: parsed.data.NODE_ENV === "production",
 } as const;
