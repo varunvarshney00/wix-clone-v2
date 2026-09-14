@@ -12,11 +12,13 @@
   },
   "devDependencies": {
     "@types/node": "^22.20.2",
+    "@types/pg": "^8.23.1",
     "tsx": "^4.23.13",
     "typescript": "^7.0.2"
   },
   "dependencies": {
     "fastify": "^5.12.4",
+    "pg": "^8.23.0",
     "zod": "^4.6.2"
   }
 }
