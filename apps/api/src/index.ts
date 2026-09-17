@@ -1,6 +1,9 @@
 import Fastify from "fastify";
 import { config } from "./config.js";
-import { pool, verifyConnection, closePool } from "./db.js";
+import { pool, verifyConnection, closePool } from "./db/pool.js";
+
+import { siteRoutes } from "./modules/sites/site.routes.js";
+import { registerErrorHandler } from "./shared/error-handler.js";
 
 const app = Fastify({
   logger: {
@@ -21,6 +24,10 @@ app.get("/ready", async (request, reply) => {
     return reply.code(503).send({ status: "not_ready", database: "down" });
   }
 });
+
+registerErrorHandler(app);
+
+await app.register(siteRoutes, { prefix: "/api/v1" });
 
 const SHUTDOWN_TIMEOUT_MS = 10_000;
 
