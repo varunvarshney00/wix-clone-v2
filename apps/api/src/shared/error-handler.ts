@@ -1,4 +1,4 @@
-import type { FastifyInstance } from "fastify";
+import type { FastifyError, FastifyInstance } from "fastify";
 import { AppError } from "./errors.js";
 
 const STATUS_BY_CODE: Record<string, number> = {
@@ -43,22 +43,23 @@ export function registerErrorHandler(app: FastifyInstance): void {
       });
     }
 
+    const fastifyError = error as FastifyError;
     const status =
-      typeof error.statusCode === "number" ? error.statusCode : 500;
+      typeof fastifyError.statusCode === "number" ? fastifyError.statusCode : 500;
 
     if (status >= 400 && status < 500) {
-      request.log.warn({ err: error, status }, "client error");
+      request.log.warn({ err: fastifyError, status }, "client error");
 
       return reply.code(status).send({
         error: {
           code: CODE_BY_STATUS[status] ?? "BAD_REQUEST",
-          message: error.message,
+          message: fastifyError.message,
           requestId: request.id,
         },
       });
     }
 
-    request.log.error({ err: error }, "unhandled error");
+    request.log.error({ err: fastifyError }, "unhandled error");
 
     return reply.code(500).send({
       error: {

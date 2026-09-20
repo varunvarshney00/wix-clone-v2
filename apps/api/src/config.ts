@@ -13,6 +13,7 @@ const configSchema = z.object({
   HOST: z.string().min(1).default("127.0.0.1"),
   LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace"]).default("info"),
   DATABASE_URL: z.string().min(1),
+  TEST_DATABASE_URL: z.string().min(1).optional(),
 });
 
 const parsed = configSchema.safeParse(process.env);
@@ -23,11 +24,19 @@ if (!parsed.success) {
   process.exit(1);
 }
 
+const databaseUrl =
+  parsed.data.NODE_ENV === "test" ? parsed.data.TEST_DATABASE_URL : parsed.data.DATABASE_URL;
+
+if (!databaseUrl) {
+  console.error("TEST_DATABASE_URL is required when NODE_ENV=test");
+  process.exit(1);
+}
+
 export const config = {
   nodeEnv: parsed.data.NODE_ENV,
   port: parsed.data.PORT,
   host: parsed.data.HOST,
   logLevel: parsed.data.LOG_LEVEL,
-  databaseUrl: parsed.data.DATABASE_URL,
+  databaseUrl,
   isProduction: parsed.data.NODE_ENV === "production",
 } as const;
