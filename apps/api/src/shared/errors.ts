@@ -27,6 +27,12 @@ export class ValidationError extends AppError {
   }
 }
 
+export class UnauthorizedError extends AppError {
+  constructor(message: string) {
+    super(message, "UNAUTHORIZED");
+  }
+}
+
 const PG_UNIQUE_VIOLATION = "23505";
 
 export function isUniqueViolation(error: unknown): boolean {

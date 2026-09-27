@@ -14,6 +14,9 @@ const configSchema = z.object({
   LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace"]).default("info"),
   DATABASE_URL: z.string().min(1),
   TEST_DATABASE_URL: z.string().min(1).optional(),
+  JWT_SECRET: z.string().min(32),
+  ACCESS_TOKEN_TTL: z.string().default("15m"),
+  REFRESH_TOKEN_TTL_DAYS: z.coerce.number().int().min(1).default(30),
 });
 
 const parsed = configSchema.safeParse(process.env);
@@ -39,4 +42,7 @@ export const config = {
   logLevel: parsed.data.LOG_LEVEL,
   databaseUrl,
   isProduction: parsed.data.NODE_ENV === "production",
+  jwtSecret: parsed.data.JWT_SECRET,
+  accessTokenTtl: parsed.data.ACCESS_TOKEN_TTL,
+  refreshTokenTtlDays: parsed.data.REFRESH_TOKEN_TTL_DAYS,
 } as const;

@@ -3,6 +3,7 @@ import { AppError } from "./errors.js";
 
 const STATUS_BY_CODE: Record<string, number> = {
   VALIDATION_FAILED: 400,
+  UNAUTHORIZED: 401,
   NOT_FOUND: 404,
   CONFLICT: 409,
 };
