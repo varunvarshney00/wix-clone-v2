@@ -1,19 +1,24 @@
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { db } from "../../db/client.js";
-import { sites, type NewSite, type Site } from "../../db/schema.js";
+import { sites, type Site } from "../../db/schema.js";
 
-export async function insertSite(data: NewSite): Promise<Site> {
+export async function insertSite(data: {
+  orgId: string;
+  name: string;
+  slug: string;
+}): Promise<Site> {
   const [row] = await db.insert(sites).values(data).returning();
-
-  if (!row) {
-    throw new Error("insert into sites returned no row");
-  }
-
+  if (!row) throw new Error("insert into sites returned no row");
   return row;
 }
 
-export async function findSiteById(id: string): Promise<Site | undefined> {
-  const [row] = await db.select().from(sites).where(eq(sites.id, id)).limit(1);
+export async function findSiteById(orgId: string, id: string): Promise<Site | undefined> {
+  const [row] = await db
+    .select()
+    .from(sites)
+    .where(and(eq(sites.orgId, orgId), eq(sites.id, id)))
+    .limit(1);
+
   return row;
 }
 
@@ -22,6 +27,12 @@ export async function findSiteBySlug(slug: string): Promise<Site | undefined> {
   return row;
 }
 
-export async function listSites(limit: number, offset: number): Promise<Site[]> {
-  return db.select().from(sites).orderBy(desc(sites.createdAt)).limit(limit).offset(offset);
+export async function listSites(orgId: string, limit: number, offset: number): Promise<Site[]> {
+  return db
+    .select()
+    .from(sites)
+    .where(eq(sites.orgId, orgId))
+    .orderBy(desc(sites.createdAt))
+    .limit(limit)
+    .offset(offset);
 }

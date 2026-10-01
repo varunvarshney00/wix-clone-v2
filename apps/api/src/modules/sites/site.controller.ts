@@ -3,6 +3,7 @@ import { z } from "zod";
 import { parseOrThrow } from "../../shared/validation.js";
 import type { Site } from "../../db/schema.js";
 import * as service from "./site.service.js";
+import { getTenant } from "../../shared/auth-hook.js";
 
 const createSiteBody = z.object({
   name: z.string().trim().min(1).max(200),
@@ -32,8 +33,9 @@ export async function createSiteHandler(
   request: FastifyRequest,
   reply: FastifyReply,
 ) {
+  const { orgId } = getTenant(request);
   const body = parseOrThrow(createSiteBody, request.body);
-  const site = await service.createSite(body);
+  const site = await service.createSite(orgId, body);
 
   return reply
     .code(201)
@@ -45,8 +47,9 @@ export async function getSiteHandler(
   request: FastifyRequest,
   reply: FastifyReply,
 ) {
+  const { orgId } = getTenant(request);
   const { id } = parseOrThrow(siteIdParams, request.params);
-  const site = await service.getSiteById(id);
+  const site = await service.getSiteById(orgId, id);
 
   return reply.send(toSiteResponse(site));
 }
@@ -55,8 +58,9 @@ export async function listSitesHandler(
   request: FastifyRequest,
   reply: FastifyReply,
 ) {
+  const { orgId } = getTenant(request);
   const query = parseOrThrow(listSitesQuery, request.query);
-  const sites = await service.listSites(query);
+  const sites = await service.listSites(orgId, query);
 
   return reply.send({
     data: sites.map(toSiteResponse),

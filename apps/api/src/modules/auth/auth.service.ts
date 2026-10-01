@@ -1,5 +1,5 @@
 import { ConflictError, UnauthorizedError } from "../../shared/errors.js";
-import type { User } from "../../db/schema.js";
+import type { Organization, User } from "../../db/schema.js";
 import { isUniqueViolation } from "../../shared/errors.js";
 import { hashPassword, verifyPassword } from "./password.js";
 import * as repository from "./auth.repository.js";
@@ -10,9 +10,19 @@ import {
   signAccessToken,
 } from "./tokens.js";
 
+import { db } from "../../db/client.js";
+import * as orgRepository from "../orgs/org.repository.js";
+import { slugify } from "../sites/slug.js";
+import { randomBytes } from "node:crypto";
+
 export interface TokenPair {
   accessToken: string;
   refreshToken: string;
+}
+
+export interface RegisterResult extends TokenPair {
+  user: User;
+  organization: Organization;
 }
 
 export interface AuthResult extends TokenPair {
@@ -38,25 +48,44 @@ async function issueTokens(userId: string): Promise<TokenPair> {
 export async function register(input: {
   email: string;
   password: string;
-}): Promise<AuthResult> {
+  organizationName?: string;
+}): Promise<RegisterResult> {
   const email = normaliseEmail(input.email);
   const passwordHash = await hashPassword(input.password);
 
-  let user: User;
-  
+  const orgName = input.organizationName?.trim() || `${email.split("@")[0]}'s workspace`;
+
+  const baseSlug = slugify(orgName) || "workspace";
+  const orgSlug = `${baseSlug}-${randomBytes(4).toString("hex")}`;
+
+  let created: { user: User; organization: Organization };
+
   try {
-    user = await repository.insertUser({ email, passwordHash });
+    created = await db.transaction(async (tx) => {
+
+      const user = await repository.insertUser({ email, passwordHash }, tx);
+
+      const organization = await orgRepository.insertOrganization(
+        { name: orgName, slug: orgSlug },
+        tx,
+      );
+      
+      await orgRepository.insertMembership(
+        { userId: user.id, orgId: organization.id, role: "owner" },
+        tx,
+      );
+
+      return { user, organization };
+    });
   } catch (error) {
     if (isUniqueViolation(error)) {
-      throw new ConflictError("an account with this email already exists", {
-        email,
-      });
+      throw new ConflictError("an account with this email already exists", { email });
     }
     throw error;
   }
 
-  const tokens = await issueTokens(user.id);
-  return { user, ...tokens };
+  const tokens = await issueTokens(created.user.id);
+  return { ...created, ...tokens };
 }
 
 export async function login(input: {

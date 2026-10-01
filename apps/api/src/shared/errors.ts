@@ -33,6 +33,12 @@ export class UnauthorizedError extends AppError {
   }
 }
 
+export class ForbiddenError extends AppError {
+  constructor(message: string) {
+    super(message, "FORBIDDEN");
+  }
+}
+
 const PG_UNIQUE_VIOLATION = "23505";
 
 export function isUniqueViolation(error: unknown): boolean {

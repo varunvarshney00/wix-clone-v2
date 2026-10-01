@@ -15,6 +15,13 @@
       "when": 1790006140815,
       "tag": "0001_awesome_blink",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790580938992,
+      "tag": "0002_colossal_unus",
+      "breakpoints": true
     }
   ]
 }

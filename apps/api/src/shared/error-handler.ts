@@ -6,6 +6,7 @@ const STATUS_BY_CODE: Record<string, number> = {
   UNAUTHORIZED: 401,
   NOT_FOUND: 404,
   CONFLICT: 409,
+  FORBIDDEN: 403,
 };
 
 const CODE_BY_STATUS: Record<number, string> = {

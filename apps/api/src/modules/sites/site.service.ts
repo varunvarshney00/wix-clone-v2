@@ -11,7 +11,7 @@ export interface CreateSiteInput {
   slug?: string;
 }
 
-export async function createSite(input: CreateSiteInput): Promise<Site> {
+export async function createSite(orgId: string, input: CreateSiteInput): Promise<Site> {
   const slug = input.slug ? slugify(input.slug) : slugify(input.name);
 
   if (slug.length === 0) {
@@ -22,7 +22,7 @@ export async function createSite(input: CreateSiteInput): Promise<Site> {
   }
 
   try {
-    return await repository.insertSite({ name: input.name, slug });
+    return await repository.insertSite({ orgId, name: input.name, slug });
   } catch (error) {
     if (isUniqueViolation(error)) {
       throw new ConflictError("a site with this slug already exists", { slug });
@@ -31,8 +31,8 @@ export async function createSite(input: CreateSiteInput): Promise<Site> {
   }
 }
 
-export async function getSiteById(id: string): Promise<Site> {
-  const site = await repository.findSiteById(id);
+export async function getSiteById(orgId: string, id: string): Promise<Site> {
+  const site = await repository.findSiteById(orgId, id);
 
   if (!site) {
     throw new NotFoundError("site", id);
@@ -41,9 +41,12 @@ export async function getSiteById(id: string): Promise<Site> {
   return site;
 }
 
-export async function listSites(options: { limit?: number; offset?: number } = {}): Promise<Site[]> {
+export async function listSites(
+  orgId: string,
+  options: { limit?: number; offset?: number } = {},
+): Promise<Site[]> {
   const limit = Math.min(options.limit ?? DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE);
   const offset = Math.max(options.offset ?? 0, 0);
 
-  return repository.listSites(limit, offset);
+  return repository.listSites(orgId, limit, offset);
 }

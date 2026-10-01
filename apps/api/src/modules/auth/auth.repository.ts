@@ -8,8 +8,8 @@ import {
   type User,
 } from "../../db/schema.js";
 
-export async function insertUser(data: NewUser): Promise<User> {
-  const [row] = await db.insert(users).values(data).returning();
+export async function insertUser(data: NewUser, tx: any = db): Promise<User> {
+  const [row] = await tx.insert(users).values(data).returning();
   if (!row) throw new Error("insert into users returned no row");
   return row;
 }
