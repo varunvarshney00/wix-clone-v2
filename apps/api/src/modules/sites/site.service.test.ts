@@ -1,11 +1,21 @@
 import { beforeEach, afterAll, describe, it, expect } from "vitest";
-import { closePool } from "../../db/pool.js";
+import { closePool, pool } from "../../db/pool.js";
 import { truncateAll } from "../../test/setup.js";
 import { ConflictError, NotFoundError, ValidationError } from "../../shared/errors.js";
 import * as service from "./site.service.js";
+import { randomUUID } from "node:crypto";
+
+let orgId: string;
 
 beforeEach(async () => {
   await truncateAll();
+
+  orgId = randomUUID();
+
+  await pool.query(
+    `INSERT INTO organizations (id, name, slug) VALUES ($1, $2, $3)`, 
+    [orgId, 'Test Organization', 'test-org-slug']
+  );
 });
 
 afterAll(async () => {
@@ -13,9 +23,6 @@ afterAll(async () => {
 });
 
 describe("createSite", () => {
-
-  const orgId = "test-org-id-123"
-
   it("derives a slug from the name", async () => {
     const site = await service.createSite(orgId, { name: "Joe's Pizza Palace" });
 
@@ -48,8 +55,6 @@ describe("createSite", () => {
 });
 
 describe("getSiteById", () => {
-  const orgId = "test-org-id-123"
-
   it("returns the site when it exists", async () => {
     const created = await service.createSite(orgId, { name: "Findable" });
     const found = await service.getSiteById(orgId, created.id);
@@ -65,8 +70,6 @@ describe("getSiteById", () => {
 });
 
 describe("listSites", () => {
-  const orgId = "test-org-id-123"
-
   it("returns newest first", async () => {
     await service.createSite(orgId, { name: "First" });
     await service.createSite(orgId, { name: "Second" });
