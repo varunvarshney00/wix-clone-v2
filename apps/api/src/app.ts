@@ -4,6 +4,7 @@ import { pool } from "./db/pool.js";
 import { siteRoutes } from "./modules/sites/site.routes.js";
 import { registerErrorHandler } from "./shared/error-handler.js";
 import { authRoutes } from "./modules/auth/auth.routes.js";
+import { pageRoutes } from "./modules/pages/page.routes.js";
 
 export interface BuildAppOptions {
   logger?: boolean;
@@ -35,6 +36,7 @@ export async function buildApp(
 
   await app.register(authRoutes, { prefix: "/api/v1" });
   await app.register(siteRoutes, { prefix: "/api/v1" });
+  await app.register(pageRoutes, { prefix: "/api/v1" });
 
   return app;
 }

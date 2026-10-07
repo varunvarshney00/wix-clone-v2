@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import {
   pgTable,
   pgEnum,
@@ -6,6 +7,9 @@ import {
   timestamp,
   index,
   unique,
+  boolean,
+  jsonb,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 
 export const sites = pgTable(
@@ -99,6 +103,34 @@ export const memberships = pgTable(
     index("memberships_org_id_idx").on(table.orgId),
   ],
 );
+
+export const pages = pgTable(
+  "pages",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    orgId: uuid("org_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    siteId: uuid("site_id")
+      .notNull()
+      .references(() => sites.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    path: text("path").notNull(),
+    isHome: boolean("is_home").notNull().default(false),
+    draftTree: jsonb("draft_tree").notNull().default({ sections: [] }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    unique("pages_site_path_unique").on(table.siteId, table.path),
+    uniqueIndex("pages_site_home_unique")
+      .on(table.siteId)
+      .where(sql`is_home = true`),
+    index("pages_org_site_idx").on(table.orgId, table.siteId),
+  ],
+);
+
+export type Page = typeof pages.$inferSelect;
 
 export type Organization = typeof organizations.$inferSelect;
 export type Membership = typeof memberships.$inferSelect;
