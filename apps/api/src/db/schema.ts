@@ -10,6 +10,7 @@ import {
   boolean,
   jsonb,
   uniqueIndex,
+  integer,
 } from "drizzle-orm/pg-core";
 
 export const sites = pgTable(
@@ -117,9 +118,10 @@ export const pages = pgTable(
     title: text("title").notNull(),
     path: text("path").notNull(),
     isHome: boolean("is_home").notNull().default(false),
-    draftTree: jsonb("draft_tree").notNull().default({ sections: [] }),
+    draftTree: jsonb("draft_tree").notNull().default({ schemaVersion: 1, sections: [] }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    version: integer("version").notNull().default(1),
   },
   (table) => [
     unique("pages_site_path_unique").on(table.siteId, table.path),

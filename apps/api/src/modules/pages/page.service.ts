@@ -3,6 +3,8 @@ import type { Page } from "../../db/schema.js";
 import * as siteService from "../sites/site.service.js";
 import * as repository from "./page.repository.js";
 
+import { validatePageTree, type PageTree } from "@wix-clone/shared";
+
 const MAX_PAGES_PER_SITE = 100;
 
 export function normalisePath(input: string): string {
@@ -117,4 +119,61 @@ export async function deletePage(orgId: string, siteId: string, id: string): Pro
   }
 
   await repository.deletePage(orgId, siteId, id);
+}
+
+export async function getPageTree(
+  orgId: string,
+  siteId: string,
+  id: string,
+): Promise<{ tree: PageTree; version: number; page: Page }> {
+  const page = await getPageById(orgId, siteId, id);
+
+  const result = validatePageTree(page.draftTree);
+
+  if (!result.ok) {
+    throw new Error(
+      `stored tree for page ${id} is invalid: ${result.violations.map((v) => v.code).join(", ")}`,
+    );
+  }
+
+  return { tree: result.tree, version: page.version, page };
+}
+
+
+export async function savePageTree(
+  orgId: string,
+  siteId: string,
+  id: string,
+  input: { tree: unknown; version: number },
+): Promise<{ tree: PageTree; version: number }> {
+  const validation = validatePageTree(input.tree);
+
+  if (!validation.ok) {
+    throw new ValidationError("page tree is not valid", {
+      violations: validation.violations,
+    });
+  }
+
+  const updated = await repository.updatePageTree(
+    orgId,
+    siteId,
+    id,
+    validation.tree,
+    input.version,
+  );
+
+  if (updated) {
+    return { tree: validation.tree, version: updated.version };
+  }
+
+  const current = await repository.findPageById(orgId, siteId, id);
+
+  if (!current) {
+    throw new NotFoundError("page", id);
+  }
+
+  throw new ConflictError("the page was modified by someone else", {
+    yourVersion: input.version,
+    currentVersion: current.version,
+  });
 }

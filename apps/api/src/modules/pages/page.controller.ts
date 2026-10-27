@@ -28,6 +28,11 @@ const updatePageBody = z
     message: "at least one of title or path must be provided",
   });
 
+const savePageTreeBody = z.object({
+  version: z.coerce.number().int().min(1),
+  tree: z.unknown(),
+});
+
 function toPageResponse(page: Page) {
   return {
     id: page.id,
@@ -88,4 +93,28 @@ export async function deletePageHandler(request: FastifyRequest, reply: FastifyR
   await service.deletePage(orgId, siteId, pageId);
 
   return reply.code(204).send();
+}
+
+export async function getPageTreeHandler(request: FastifyRequest, reply: FastifyReply) {
+  const { orgId } = getTenant(request);
+  const { siteId, pageId } = parseOrThrow(pageParams, request.params);
+
+  const { tree, version, page } = await service.getPageTree(orgId, siteId, pageId);
+
+  return reply.send({
+    pageId: page.id,
+    siteId: page.siteId,
+    version,
+    tree,
+  });
+}
+
+export async function savePageTreeHandler(request: FastifyRequest, reply: FastifyReply) {
+  const { orgId } = getTenant(request);
+  const { siteId, pageId } = parseOrThrow(pageParams, request.params);
+  const body = parseOrThrow(savePageTreeBody, request.body);
+
+  const { tree, version } = await service.savePageTree(orgId, siteId, pageId, body);
+
+  return reply.send({ pageId, siteId, version, tree });
 }

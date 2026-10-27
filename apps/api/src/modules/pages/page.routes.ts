@@ -20,10 +20,21 @@ export async function pageRoutes(app: FastifyInstance): Promise<void> {
     { preHandler: requireRole("editor") },
     controller.updatePageHandler,
   );
-  
+
   app.delete(
     "/sites/:siteId/pages/:pageId",
     { preHandler: requireRole("admin") },
     controller.deletePageHandler,
+  );
+
+  app.get("/sites/:siteId/pages/:pageId/tree", controller.getPageTreeHandler);
+
+  app.put(
+    "/sites/:siteId/pages/:pageId/tree",
+    {
+      preHandler: requireRole("editor"),
+      bodyLimit: 512 * 1024,
+    },
+    controller.savePageTreeHandler,
   );
 }

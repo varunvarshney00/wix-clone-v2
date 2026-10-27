@@ -2,6 +2,9 @@ import { and, asc, eq } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { pages, type Page } from "../../db/schema.js";
 
+import { sql } from "drizzle-orm";
+import type { PageTree } from "@wix-clone/shared";
+
 export async function insertPage(
   data: {
     orgId: string;
@@ -62,6 +65,33 @@ export async function deletePage(
   const [row] = await db
     .delete(pages)
     .where(and(eq(pages.orgId, orgId), eq(pages.siteId, siteId), eq(pages.id, id)))
+    .returning();
+
+  return row;
+}
+
+export async function updatePageTree(
+  orgId: string,
+  siteId: string,
+  id: string,
+  tree: PageTree,
+  expectedVersion: number,
+): Promise<Page | undefined> {
+  const [row] = await db
+    .update(pages)
+    .set({
+      draftTree: tree,
+      version: sql`${pages.version} + 1`,
+      updatedAt: new Date(),
+    })
+    .where(
+      and(
+        eq(pages.orgId, orgId),
+        eq(pages.siteId, siteId),
+        eq(pages.id, id),
+        eq(pages.version, expectedVersion),
+      ),
+    )
     .returning();
 
   return row;
